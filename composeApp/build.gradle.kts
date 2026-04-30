@@ -25,6 +25,11 @@ kotlin {
             implementation(libs.androidx.activity.compose)
         }
         commonMain.dependencies {
+            implementation(libs.ktor.client.core)
+            implementation(libs.ktor.client.cio)
+            implementation(libs.ktor.client.content.negotiation)
+            implementation(libs.ktor.serialization.kotlinx.json)
+            implementation(libs.essenty.lifecycle.coroutines)
             implementation(libs.decompose)
             implementation(libs.decompose.extensions.compose)
             implementation(compose.material3AdaptiveNavigationSuite) // Для адаптивного меню
