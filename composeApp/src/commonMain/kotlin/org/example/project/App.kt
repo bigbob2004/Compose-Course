@@ -2,67 +2,92 @@ package org.example.project
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
+// Модель данных для продукта
+data class ShoppingListItem(
+    val description: String,
+    val bought: Boolean = false
+)
+
 @Composable
-fun ShoppingListElement(name: String, amount: String) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp)
-    ) {
-        Row(
-            modifier = Modifier
-                .padding(16.dp)
-                .fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(text = name, style = MaterialTheme.typography.bodyLarge)
-            Text(
-                text = amount,
-                color = MaterialTheme.colorScheme.primary,
-                style = MaterialTheme.typography.bodyMedium
-            )
+fun App() {
+    // Состояние списка продуктов
+    val shoppingList = remember {
+        mutableStateListOf(ShoppingListItem("Молоко"), ShoppingListItem("Мука"))
+    }
+
+    // Состояние текста в поле ввода
+    var newItemDesc by remember { mutableStateOf("") }
+
+    MaterialTheme {
+        Surface(modifier = Modifier.fillMaxSize()) {
+            LazyColumn {
+                // Поле ввода нового продукта
+                item {
+                    OutlinedTextField(
+                        value = newItemDesc,
+                        onValueChange = { newItemDesc = it },
+                        modifier = Modifier.fillMaxWidth().padding(8.dp),
+                        label = { Text("Название продукта") },
+                        trailingIcon = {
+                            IconButton(onClick = {
+                                if (newItemDesc.isNotBlank()) {
+                                    shoppingList.add(ShoppingListItem(newItemDesc.trim()))
+                                    newItemDesc = "" // Очищаем поле после добавления
+                                }
+                            }) {
+                                Icon(Icons.Default.Add, contentDescription = "Добавить")
+                            }
+                        }
+                    )
+                }
+
+                // Отображение списка
+                itemsIndexed(shoppingList) { i, item ->
+                    ShoppingListElement(
+                        item = item,
+                        onBoughtChange = { isBought ->
+                            // Создаем копию объекта с измененным статусом и заменяем в списке
+                            shoppingList[i] = item.copy(bought = isBought)
+                        },
+                        onDelete = {
+                            shoppingList.removeAt(i) // Удаление по индексу
+                        }
+                    )
+                }
+            }
         }
     }
 }
 
 @Composable
-fun App() {
-    MaterialTheme {
-        val shoppingList = remember {
-            listOf(
-                "Молоко" to "2 литра",
-                "Хлеб" to "1 батон",
-                "Яйца" to "10 шт",
-                "Яблоки" to "1 кг"
-            )
-        }
+fun ShoppingListElement(
+    item: ShoppingListItem,
+    onBoughtChange: (Boolean) -> Unit,
+    onDelete: () -> Unit
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.padding(horizontal = 8.dp)
+    ) {
+        Checkbox(
+            checked = item.bought,
+            onCheckedChange = onBoughtChange
+        )
+        // weight(1f) заставляет текст занять всё свободное место
+        Text(item.description, Modifier.weight(1f))
 
-        Surface(
-            modifier = Modifier.fillMaxSize(),
-            color = MaterialTheme.colorScheme.background
-        ) {
-            Column(modifier = Modifier.fillMaxWidth()) {
-                Text(
-                    text = "Мои покупки",
-                    style = MaterialTheme.typography.headlineMedium,
-                    modifier = Modifier.padding(16.dp)
-                )
-
-                LazyColumn(modifier = Modifier.fillMaxWidth()) {
-                    items(shoppingList) { item ->
-                        ShoppingListElement(name = item.first, amount = item.second)
-                    }
-                }
-            }
+        IconButton(onClick = onDelete) {
+            Icon(Icons.Default.Delete, contentDescription = "Удалить")
         }
     }
 }
