@@ -3,23 +3,21 @@ package org.example.project
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.tooling.preview.Preview
+import com.arkivanov.decompose.defaultComponentContext
+import org.example.project.component.RootComponentImpl
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
-        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
 
+        // 1. Создаем контекст Decompose, привязанный к жизненному циклу Activity
+        val root = RootComponentImpl(
+            componentContext = defaultComponentContext()
+        )
+
         setContent {
-            App()
+            // 2. Передаем созданный компонент в главную функцию приложения
+            App(rootComponent = root)
         }
     }
-}
-
-@Preview
-@Composable
-fun AppAndroidPreview() {
-    App()
 }

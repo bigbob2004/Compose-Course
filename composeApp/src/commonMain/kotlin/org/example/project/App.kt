@@ -1,159 +1,65 @@
 package org.example.project
 
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.itemsIndexed
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.*
-import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
-import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
+import androidx.compose.material3.adaptive.navigationsuite.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.style.TextDecoration
-import androidx.compose.ui.unit.dp
-import androidx.window.core.layout.WindowWidthSizeClass
-import kotlinx.coroutines.launch
-import org.example.project.ui.theme.getApplicationColorScheme
+import com.arkivanov.decompose.extensions.compose.stack.Children
+import com.arkivanov.decompose.extensions.compose.stack.animation.fade
+import com.arkivanov.decompose.extensions.compose.stack.animation.stackAnimation
+import com.arkivanov.decompose.extensions.compose.subscribeAsState
+import org.example.project.component.Config
+import org.example.project.component.RootComponent
+// Импорты твоих экранов из папки ui.screen
+import org.example.project.ui.screen.HomeScreen
+import org.example.project.ui.screen.AboutScreen
+import org.example.project.ui.screen.SecondScreen
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3AdaptiveApi::class)
 @Composable
-fun App() {
-    // Используем нашу кроссплатформенную схему цветов
-    MaterialTheme(colorScheme = getApplicationColorScheme()) {
-        val shoppingList = remember { mutableStateListOf<Pair<String, Boolean>>() }
-        var inputText by rememberSaveable { mutableStateOf("") }
-        var showDeleteDialog by remember { mutableStateOf(false) }
+fun App(rootComponent: RootComponent) {
+    // Подписываемся на состояние стека навигации
+    val childStack by rootComponent.childStack.subscribeAsState()
+    val navSuiteState = rememberNavigationSuiteScaffoldState()
 
-        val snackbarHostState = remember { SnackbarHostState() }
-        val scope = rememberCoroutineScope()
-
-        // Определяем класс размера окна для адаптивного дизайна
-        val adaptiveInfo = currentWindowAdaptiveInfo()
-        val isCompact = adaptiveInfo.windowSizeClass.windowWidthSizeClass == WindowWidthSizeClass.COMPACT
-
-        Scaffold(
-            topBar = {
-                TopAppBar(
-                    title = { Text("Список покупок") },
-                    actions = {
-                        IconButton(onClick = { showDeleteDialog = true }) {
-                            Icon(Icons.Default.DeleteSweep, contentDescription = "Очистить всё")
-                        }
-                    }
-                )
-            },
-            snackbarHost = { SnackbarHost(snackbarHostState) },
-            floatingActionButton = {
-                FloatingActionButton(onClick = {
-                    if (inputText.isNotBlank()) {
-                        shoppingList.add(inputText.trim() to false)
-                        inputText = ""
-                    } else {
-                        // Показ снекбара через корутину
-                        scope.launch {
-                            snackbarHostState.showSnackbar("Введите название товара")
-                        }
-                    }
-                }) {
-                    Icon(Icons.Default.Add, contentDescription = "Добавить")
-                }
-            }
-        ) { contentPadding ->
-            Column(
-                modifier = Modifier
-                    .padding(contentPadding)
-                    .fillMaxSize()
-                    .padding(horizontal = 4.dp) // Минимальный боковой отступ
-            ) {
-                OutlinedTextField(
-                    value = inputText,
-                    onValueChange = { inputText = it },
-                    modifier = Modifier.fillMaxWidth().padding(8.dp),
-                    label = { Text("Новый продукт") },
-                    singleLine = true
-                )
-
-                // Адаптивная разметка: список для телефонов, сетка для больших экранов
-                if (isCompact) {
-                    LazyColumn(modifier = Modifier.weight(1f)) {
-                        itemsIndexed(shoppingList) { index, item ->
-                            ShoppingItemRow(
-                                item = item,
-                                onCheckedChange = { isChecked ->
-                                    shoppingList[index] = item.first to isChecked
-                                },
-                                onDelete = { shoppingList.removeAt(index) }
-                            )
-                        }
-                    }
-                } else {
-                    LazyVerticalGrid(
-                        columns = GridCells.Fixed(2),
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        itemsIndexed(shoppingList) { index, item ->
-                            ShoppingItemRow(
-                                item = item,
-                                onCheckedChange = { isChecked ->
-                                    shoppingList[index] = item.first to isChecked
-                                },
-                                onDelete = { shoppingList.removeAt(index) }
-                            )
-                        }
-                    }
-                }
-            }
-
-            // Диалог подтверждения для необратимых действий
-            if (showDeleteDialog) {
-                AlertDialog(
-                    onDismissRequest = { showDeleteDialog = false },
-                    confirmButton = {
-                        TextButton(onClick = {
-                            shoppingList.clear()
-                            showDeleteDialog = false
-                            scope.launch { snackbarHostState.showSnackbar("Список очищен") }
-                        }) { Text("Очистить") }
-                    },
-                    dismissButton = {
-                        TextButton(onClick = { showDeleteDialog = false }) { Text("Отмена") }
-                    },
-                    title = { Text("Удалить всё?") },
-                    text = { Text("Вы уверены, что хотите полностью очистить список покупок?") },
-                    icon = { Icon(Icons.Default.Warning, contentDescription = null) }
-                )
-            }
+    // Логика скрытия навигационной панели на определенных экранах
+    LaunchedEffect(childStack.active.configuration) {
+        if (childStack.active.configuration is Config.MainScreen) {
+            navSuiteState.show()
+        } else {
+            navSuiteState.hide()
         }
     }
-}
 
-@Composable
-fun ShoppingItemRow(
-    item: Pair<String, Boolean>,
-    onCheckedChange: (Boolean) -> Unit,
-    onDelete: () -> Unit
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(8.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Checkbox(checked = item.second, onCheckedChange = onCheckedChange)
-        Text(
-            text = item.first,
-            modifier = Modifier.weight(1f).padding(start = 8.dp),
-            style = LocalTextStyle.current.copy(
-                textDecoration = if (item.second) TextDecoration.LineThrough else TextDecoration.None
+    NavigationSuiteScaffold(
+        state = navSuiteState,
+        navigationItems = {
+            // В версии 1.2.0 используем полное имя NavigationSuiteItem
+            NavigationSuiteItem(
+                selected = childStack.active.configuration is Config.Home,
+                onClick = { rootComponent.navigate(Config.Home) },
+                icon = { Icon(Icons.Default.Home, contentDescription = "Главная") },
+                label = { Text("Главная") }
             )
-        )
-        IconButton(onClick = onDelete) {
-            Icon(Icons.Default.Delete, contentDescription = "Удалить", tint = Color.Red)
+            NavigationSuiteItem(
+                selected = childStack.active.configuration is Config.About,
+                onClick = { rootComponent.navigate(Config.About) },
+                icon = { Icon(Icons.Default.Info, contentDescription = "О нас") },
+                label = { Text("О нас") }
+            )
+        }
+    ) {
+        // Отрисовка текущего активного экрана из стека Decompose
+        Children(
+            stack = childStack,
+            animation = stackAnimation(fade()) // Плавная анимация перехода
+        ) {
+            when (val child = it.instance) {
+                is RootComponent.Child.Home -> HomeScreen(child.component)
+                is RootComponent.Child.About -> AboutScreen(child.component)
+                is RootComponent.Child.Second -> SecondScreen(child.component)
+            }
         }
     }
 }
