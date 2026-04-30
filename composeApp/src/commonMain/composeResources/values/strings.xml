@@ -1,4 +1,5 @@
 <resources>
+    <string name="app_title">Мой список покупок</string>
     <string name="input_placeholder">Название продукта</string>
     <string name="add_button">Добавить</string>
     <string name="delete_button">Удалить</string>

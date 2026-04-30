@@ -8,48 +8,59 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
+import org.example.project.ui.theme.getApplicationColorScheme
 
-// НОВЫЙ ИМПОРТ ТУТ:
-import myshoppinglist.composeapp.generated.resources.*
-import org.jetbrains.compose.resources.stringResource
-
-data class ShoppingListItem(val description: String, val bought: Boolean = false)
-
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun App() {
-    val shoppingList = remember { mutableStateListOf(ShoppingListItem("Молоко"), ShoppingListItem("Мука")) }
-    var newItemDesc by remember { mutableStateOf("") }
+    MaterialTheme(colorScheme = getApplicationColorScheme()) {
+        Scaffold(
+            topBar = { TopAppBar(title = { Text("My Shopping List") }) }
+        ) { contentPadding ->
+            val shoppingList = remember { mutableStateListOf<Pair<String, Boolean>>() }
+            // rememberSaveable сохраняет ввод при повороте устройства
+            var inputText by rememberSaveable { mutableStateOf("") }
 
-    MaterialTheme {
-        Surface(modifier = Modifier.fillMaxSize()) {
-            Column {
-                OutlinedTextField(
-                    value = newItemDesc,
-                    onValueChange = { newItemDesc = it },
-                    modifier = Modifier.fillMaxWidth().padding(8.dp),
-                    label = { Text(stringResource(Res.string.input_placeholder)) },
-                    trailingIcon = {
-                        IconButton(onClick = {
-                            if (newItemDesc.isNotBlank()) {
-                                shoppingList.add(ShoppingListItem(newItemDesc.trim()))
-                                newItemDesc = ""
-                            }
-                        }) {
-                            Icon(Icons.Default.Add, contentDescription = stringResource(Res.string.add_button))
+            Column(modifier = Modifier.padding(contentPadding).fillMaxSize()) {
+                Row(modifier = Modifier.padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    OutlinedTextField(
+                        value = inputText,
+                        onValueChange = { inputText = it },
+                        modifier = Modifier.weight(1f),
+                        label = { Text("Продукт") },
+                        singleLine = true
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Button(onClick = {
+                        if (inputText.isNotBlank()) {
+                            shoppingList.add(inputText.trim() to false)
+                            inputText = ""
                         }
+                    }) {
+                        Icon(Icons.Default.Add, contentDescription = null)
                     }
-                )
+                }
 
-                LazyColumn {
-                    itemsIndexed(shoppingList) { i, item ->
-                        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(8.dp)) {
-                            Checkbox(checked = item.bought, onCheckedChange = { shoppingList[i] = item.copy(bought = it) })
-                            Text(item.description, Modifier.weight(1f))
-                            IconButton(onClick = { shoppingList.removeAt(i) }) {
-                                Icon(Icons.Default.Delete, contentDescription = stringResource(Res.string.delete_button))
+                LazyColumn(modifier = Modifier.fillMaxSize()) {
+                    itemsIndexed(shoppingList) { index, item ->
+                        Row(modifier = Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Checkbox(checked = item.second, onCheckedChange = { shoppingList[index] = item.first to it })
+                            Text(
+                                text = item.first,
+                                modifier = Modifier.weight(1f).padding(start = 8.dp),
+                                style = LocalTextStyle.current.copy(
+                                    textDecoration = if (item.second) TextDecoration.LineThrough else TextDecoration.None,
+                                    color = if (item.second) Color.Gray else Color.Unspecified
+                                )
+                            )
+                            IconButton(onClick = { shoppingList.removeAt(index) }) {
+                                Icon(Icons.Default.Delete, contentDescription = null, tint = Color.Red)
                             }
                         }
                     }
