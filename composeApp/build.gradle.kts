@@ -68,11 +68,11 @@ android {
     compileSdk = libs.versions.android.compileSdk.get().toInt()
 
     defaultConfig {
-        applicationId = "org.example.project"
+        applicationId = "ru.shemelis.shoppinglist"
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
         versionCode = 1
-        versionName = "1.0"
+        versionName = "1.0-release"
     }
     packaging {
         resources {
@@ -81,7 +81,9 @@ android {
     }
     buildTypes {
         getByName("release") {
-            isMinifyEnabled = false
+            isMinifyEnabled = true // Поиск неиспользуемого кода
+            isShrinkResources = true // Удаление неиспользуемых ресурсов
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
     }
     compileOptions {
