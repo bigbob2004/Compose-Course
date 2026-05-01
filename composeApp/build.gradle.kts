@@ -25,6 +25,15 @@ kotlin {
             implementation(libs.androidx.activity.compose)
         }
         commonMain.dependencies {
+            implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.0")
+            implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
+            implementation("androidx.datastore:datastore-core-okio:1.1.1")
+            implementation("androidx.datastore:datastore-preferences-core:1.1.1")
+            implementation("com.arkivanov.decompose:decompose:3.1.0")
+            implementation("com.arkivanov.decompose:extensions-compose:3.1.0")
+            implementation("com.arkivanov.decompose:extensions-compose:3.1.0") // Для Children и анимаций
+            implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3") // Для @Serializable
+            implementation(libs.dataStore)
             implementation(libs.ktor.client.core)
             implementation(libs.ktor.client.cio)
             implementation(libs.ktor.client.content.negotiation)
