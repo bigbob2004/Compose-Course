@@ -18,11 +18,21 @@ fun HomeScreen(component: HomeComponent) {
             label = { Text("Введите текст") },
             modifier = Modifier.fillMaxWidth()
         )
+
+        // Кнопка для перехода в Настройки
         Button(
-            onClick = { component.navigateToSecond(text) },
-            modifier = Modifier.padding(top = 8.dp)
+            onClick = { component.navigateToSettings() },
+            modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
         ) {
-            Text("Перейти на второй экран")
+            Text("Перейти в настройки")
+        }
+
+        // Кнопка для перехода к Разрешениям (Урок 9)
+        Button(
+            onClick = { component.navigateToPermissions() },
+            modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+        ) {
+            Text("Запросить разрешения")
         }
     }
 }

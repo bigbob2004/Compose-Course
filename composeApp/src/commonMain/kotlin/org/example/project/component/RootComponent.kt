@@ -22,7 +22,8 @@ interface HomeComponent {
     fun addItem(name: String)
     fun toggleItem(id: String)
     fun removeItem(id: String)
-    fun navigateToSecond(message: String)
+    fun navigateToSettings()
+    fun navigateToPermissions()
 }
 
 interface SettingsComponent {
@@ -37,6 +38,7 @@ interface RootComponent {
     sealed class Child {
         class Home(val component: HomeComponent) : Child()
         class Settings(val component: SettingsComponent) : Child()
+        class Permissions(val component: SettingsComponent) : Child()
     }
 }
 
@@ -64,47 +66,42 @@ class RootComponentImpl(
                 HomeComponentImpl(
                     dataStore = dataStore,
                     componentContext = componentContext,
-                    onNavigateToSecond = { navigation.push(Config.Settings) }
+                    onNavigateToSettings = { navigation.push(Config.Settings) },
+                    onNavigateToPermissions = { navigation.push(Config.Permissions) }
                 )
             )
             is Config.Settings -> RootComponent.Child.Settings(
-                SettingsComponentImpl(
-                    componentContext = componentContext,
-                    dataStore = dataStore,
-                    onGoBack = { navigation.pop() }
-                )
+                SettingsComponentImpl(componentContext, dataStore, { navigation.pop() })
+            )
+            is Config.Permissions -> RootComponent.Child.Permissions(
+                SettingsComponentImpl(componentContext, dataStore, { navigation.pop() })
             )
         }
 
     @Serializable
     private sealed class Config {
-        @Serializable
-        data object Home : Config()
-        @Serializable
-        data object Settings : Config()
+        @Serializable data object Home : Config()
+        @Serializable data object Settings : Config()
+        @Serializable data object Permissions : Config()
     }
 }
 
 class HomeComponentImpl(
     private val dataStore: DataStore<Preferences>,
     componentContext: ComponentContext,
-    private val onNavigateToSecond: () -> Unit
+    private val onNavigateToSettings: () -> Unit,
+    private val onNavigateToPermissions: () -> Unit
 ) : HomeComponent, ComponentContext by componentContext {
 
     private val scope = CoroutineScope(Dispatchers.Main)
 
     override fun addItem(name: String) {
         scope.launch {
-            try {
-                dataStore.updateData { it.copy(shoppingList = it.shoppingList + ShoppingItem(
-                    id = Clock.System.now().toEpochMilliseconds().toString(),
-                    name = name,
-                    isChecked = false
-                )) }
-                println("Успешно добавлено: $name")
-            } catch (e: Exception) {
-                println("Ошибка добавления: ${e.message}")
-            }
+            dataStore.updateData { it.copy(shoppingList = it.shoppingList + ShoppingItem(
+                id = Clock.System.now().toEpochMilliseconds().toString(),
+                name = name,
+                isChecked = false
+            )) }
         }
     }
 
@@ -126,9 +123,8 @@ class HomeComponentImpl(
         }
     }
 
-    override fun navigateToSecond(message: String) {
-        onNavigateToSecond()
-    }
+    override fun navigateToSettings() = onNavigateToSettings()
+    override fun navigateToPermissions() = onNavigateToPermissions()
 }
 
 class SettingsComponentImpl(
@@ -136,16 +132,9 @@ class SettingsComponentImpl(
     private val dataStore: DataStore<Preferences>,
     private val onGoBack: () -> Unit
 ) : SettingsComponent, ComponentContext by componentContext {
-
     private val scope = CoroutineScope(Dispatchers.Main)
-
     override fun updateTheme(config: ThemeConfig) {
-        scope.launch {
-            dataStore.updateData { it.copy(theme = config) }
-        }
+        scope.launch { dataStore.updateData { it.copy(theme = config) } }
     }
-
-    override fun goBack() {
-        onGoBack()
-    }
+    override fun goBack() = onGoBack()
 }
